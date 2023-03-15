@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, shutil
 from pathlib import Path
 from urllib.parse import unquote
 from tqdm import tqdm
@@ -24,7 +24,7 @@ def Download(url: str) -> None:
 		with tqdm(total=file_size, desc=f'Processing file', leave=True, file=None, mininterval=0.1, miniters=1, dynamic_ncols=True,
 				  smoothing=True, bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}~{remaining}, {rate_fmt}]',
 				  initial=0, position=None, ascii=None, unit='B', unit_scale=True, unit_divisor=1024,
-				  ncols=100, colour="magenta") as progress_bar:
+				  ncols=shutil.get_terminal_size().columns, colour="magenta") as progress_bar:
 			for data in response.iter_content(chunk_size=1024):
 				file.write(data)
 				progress_bar.update(len(data))
@@ -33,7 +33,7 @@ def Download(url: str) -> None:
 			with tqdm(total=file_size, desc=f'Saving file', leave=True, file=None, mininterval=0.1, miniters=1, dynamic_ncols=True,
 					  smoothing=True, bar_format='{l_bar}{bar}| [{elapsed}~{remaining}]',
 					  initial=0, position=None, ascii=None, unit='B', unit_scale=True, unit_divisor=1024,
-					  ncols=200, colour="green") as progress_bar:
+					  ncols=shutil.get_terminal_size().columns, colour="green") as progress_bar:
 				while True:
 					data = file.read(1024)
 					if not data:

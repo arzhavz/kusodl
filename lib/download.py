@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup as bs
 from lib.scraper import Kusonime
 
 
-def Download(url: str) -> None:
+def GDDownload(url: str) -> None:
 	response = requests.get(url)
 	html = bs(response.text, "html.parser")
 	form_url = unquote(html.find("form").get("action"))

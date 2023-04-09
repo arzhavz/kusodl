@@ -7,115 +7,121 @@ from prompt_toolkit.shortcuts import (
 	radiolist_dialog
 )
 
-from config.metadata import Styles, Messages
+from config.metadata import Messages, Styles, Configs
 from lib.scraper import Kusonime
-from lib.download import Download
+from lib.download import GDDownload
+from lib.utils import KeyListCreator, Validation, Browser
 
 
-def create_sub_key_list(data):
-	sub_keys = []
-	for key, value in data.items():
-		if isinstance(value, dict):
-			sub_keys.extend([(sub_key, sub_key.upper()) for sub_key in value])
+class KusoDL:
+	def __init__(self):
+		self.theme = Styles.default
+		self.platform = "l"
+		
+	def _display_goodbye_message(self, message="Sayonara!"):
+			message_dialog(
+			title=Messages.title,
+			text=HTML(f"{message}"),
+			style=self.theme
+		).run()
+	
+	def _download_episode(self, data, hosts):
+		selected_host = radiolist_dialog(
+			title=Messages.title,
+			text=Messages.host_text,
+			values=hosts,
+			style=self.theme
+		).run()
+
+		if selected_host:
+			try:
+				host_data = data[selected_host]
+				result = GDDownload(host_data)
+				if result == True:
+					self._display_goodbye_message(Messages.success_text)
+				elif result == False:
+						self._display_goodbye_message(Messages.canceled)
+			except Exception as e:
+				self._display_goodbye_message(
+					Messages.cant_download.format(data[selected_host])
+				)
+				print(f"\033[32mOpening \033[0m\033[35m{data[selected_host]}\033[0m \033[32min your local browser.\033[0m")
+				Browser(data[selected_host]).open(self.platform)
 		else:
-			sub_keys.append((key, key.upper()))
-	return sub_keys
+			self._display_goodbye_message(Messages.canceled)
 
 
-def create_key_list(data):
-	return [(key, key.upper()) for key in data]
+	def _get_episode_resolution(self, data, resolutions):
+		selected_resolution = radiolist_dialog(
+			title=Messages.title,
+			text=Messages.res_text,
+			values=resolutions,
+			style=self.theme
+		).run()
+
+		if selected_resolution:
+			try:
+				resolution_data = data.get_url(selected_resolution)
+				hosts = KeyListCreator(resolution_data).create_sub_key_list()
+				self._download_episode(resolution_data, hosts)
+			except Exception as e:
+				self._display_goodbye_message(Messages.error.format(str(e)))
+		else:
+			self._display_goodbye_message(Messages.canceled)
 
 
-def is_valid_url(url):
-	pattern = re.compile(
-		r'^https?://'
-		r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
-		r'kusonime|'
-		r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
-		r'(?::\d+)?'
-		r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-	return bool(pattern.match(url))
-
-
-def display_goodbye_message(message="Sayonara!"):
-	message_dialog(
-		title=Messages.title,
-		text=HTML(f"{message}\n\n{Messages.bye_text}"),
-		style=Styles.Retro
-	).run()
-
-
-def download_episode(data, hosts):
-	selected_host = radiolist_dialog(
-		title=Messages.title,
-		text=Messages.host_text,
-		values=hosts,
-		style=Styles.Retro
-	).run()
-
-	if selected_host:
+	def _start_downloading(self):
 		try:
-			host_data = data[selected_host]
-			result = Download(host_data)
-			if result == True:
-				display_goodbye_message("Berhasil mengunduh file!\nFile akan tersimpan di folder tmp")
-			elif result == False:
-				display_goodbye_message("Operasi dibatalkan oleh User.")
+			url = input_dialog(
+				title=Messages.title,
+				text=Messages.input_text,
+				style=self.theme
+			).run()
+
+			if Validation(Configs.kuso_regex).URL(url):
+				try:
+					kusonime_data = Kusonime(url.strip())
+					resolutions = KeyListCreator(kusonime_data.all_res).create_key_list()
+					self._get_episode_resolution(kusonime_data, resolutions)
+				except Exception as e:
+					self._display_goodbye_message(Messages.error.format(str(e)))
+			else:
+				self._display_goodbye_message(Messages.invalid_url)
+				self._start_downloading()
 		except Exception as e:
-			display_goodbye_message(f"Terjadi kesalahan saat mengunduh file!\n<ansired>{str(e)}</ansired>\nSilahkan copy URL dibawah untuk mengunduhnya secara manual di browser.\n<ansigreen>{data[selected_host]}</ansigreen>")
-	else:
-		display_goodbye_message("Operasi dibatalkan oleh User.")
+			self._display_goodbye_message(Messages.canceled)
 
 
-def get_episode_resolution(data, resolutions):
-	selected_resolution = radiolist_dialog(
-		title=Messages.title,
-		text=Messages.res_text,
-		values=resolutions,
-		style=Styles.Retro
-	).run()
+	def _select_theme(self):
+		theme = radiolist_dialog(
+			title=Messages.title,
+			text=Messages.theme_text,
+			values=Configs.themes,
+			style=self.theme
+		).run()
 
-	if selected_resolution:
-		try:
-			resolution_data = data.get_url(selected_resolution)
-			hosts = create_sub_key_list(resolution_data)
-			download_episode(resolution_data, hosts)
-		except Exception as e:
-			display_goodbye_message("Terjadi kesalahan.\n<ansired>{str(e)}</ansired>")
-	else:
-		display_goodbye_message("Operasi dibatalkan oleh User.")
+		if theme:
+			self.theme = theme
+			Styles.default = self.theme
+			self._start_downloading()
+		else:
+			self._run_program()
+	
 
+	def run_program(self):
+		result = radiolist_dialog(
+			title=Messages.title,
+			text=Messages.intro_text,
+			values=[("l", "Linux"), ("w", "Windows")],
+			style=self.theme
+		).run()
 
-def start_downloading():
-	url = input_dialog(
-		title=Messages.title,
-		text=Messages.input_text,
-		style=Styles.Retro
-	).run()
-
-	if is_valid_url(url):
-		try:
-			kusonime_data = Kusonime(url.strip())
-			resolutions = create_key_list(kusonime_data.all_res)
-			get_episode_resolution(kusonime_data, resolutions)
-		except Exception as e:
-			display_goodbye_message("Terjadi kesalahan saat mengambil informasi dari URL yang diberikan.\n<ansired>{str(e)}</ansired>")
-	else:
-		display_goodbye_message("Tautan yang kamu berikan tidak valid, coba periksa kembali tautan kamu.")
-
-
-def run_program():
-	result = yes_no_dialog(
-		title=Messages.title,
-		text=Messages.intro_text,
-		style=Styles.Retro
-	).run()
-
-	if result:
-		start_downloading()
-	else:
-		display_goodbye_message("Operasi dibatalkan oleh User.")
+		if result:
+			self.platform = result
+			self._select_theme()
+		else:
+			self._display_goodbye_message(Messages.canceled)
 
 
 if __name__ == "__main__":
-	run_program()
+	KusoDL().run_program()

@@ -3,6 +3,7 @@ bs4==0.0.1
 certifi==2022.12.7
 charset-normalizer==3.1.0
 idna==3.4
+pathlib==1.0.1
 prompt-toolkit==3.0.38
 requests==2.28.2
 soupsieve==2.4

@@ -105,7 +105,7 @@ class KusoDL:
 			Styles.default = self.theme
 			self._start_downloading()
 		else:
-			self._run_program()
+			self.run_program()
 	
 
 	def run_program(self):

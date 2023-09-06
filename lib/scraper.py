@@ -80,8 +80,8 @@ class Kusonime:
 				.text.split(":")[1]
 				.strip()
 			)
-			ddl = html.find("div", {"class": "smokeddl"})
-			smokeurl = ddl.find_all("div", {"class": "smokeurl"})
+			ddl = html.find("div", {"class": "smokeddlrh"})
+			smokeurl = ddl.find_all("div", {"class": "smokeurlrh"})
 			Key1 = {}
 			Resolutions = []
 			for url in smokeurl:

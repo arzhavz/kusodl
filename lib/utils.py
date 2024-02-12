@@ -41,6 +41,6 @@ class Browser:
 			elif platform.lower().strip() == "w":
 				time.sleep(delay)
 				os.system(f"start {self.url}")
-			return
+			exit()
 		except:
 			print("Error: Could not open browser")

@@ -1,5 +1,6 @@
 # kusodl
-Kusonime downloader dengan desain GUI, intinya gitu
+Kusonime downloader dengan desain GUI, intinya gitu.
+<p><strong>Info aja, proyek ini aku perluas dan aku kembangin. Tapi di repo lain, cek aja langsung di </strong><a href="https://github.com/arzhavz/stdl">https://github.com/arzhavz/stdl</a></p>
 
 ## Instalasi
 Install-nya gampang cuy
